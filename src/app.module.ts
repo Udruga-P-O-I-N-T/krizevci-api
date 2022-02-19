@@ -13,6 +13,7 @@ import { EventsModule } from './events/events.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       debug: false,
+      introspection: true,
       playground: true,
     }),
   ],
