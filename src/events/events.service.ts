@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { formatISO, addMonths } from 'date-fns';
+import { sortBy } from 'lodash';
 
 import { Event } from './event.entity';
 
@@ -48,9 +49,12 @@ export class EventsService {
   }
 
   async findAllEvents(): Promise<Event[]> {
-    const fh = await this.findFuturehubEvents();
-    const tz = await this.findTuristickaZajednicaEvents();
-
-    return [...fh, ...tz];
+    return sortBy(
+      [
+        ...(await this.findFuturehubEvents()),
+        ...(await this.findTuristickaZajednicaEvents()),
+      ],
+      'startDate',
+    );
   }
 }
