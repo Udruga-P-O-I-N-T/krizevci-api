@@ -32,7 +32,7 @@ export class EventsService {
 
   async findTuristickaZajednicaEvents(): Promise<Event[]> {
     const startDate = formatISO(new Date(), { representation: 'date' });
-    const endDate = formatISO(addMonths(new Date(), 1), {
+    const endDate = formatISO(addMonths(new Date(), 2), {
       representation: 'date',
     });
     const url = `https://teamup.com/ksitdko5fjg57vfxnv/events?startDate=${startDate}&endDate=${endDate}&tz=Europe%2FZagreb`;
