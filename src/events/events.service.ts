@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { formatISO, addMonths } from 'date-fns';
+import { formatISO, addMonths, isAfter, startOfDay } from 'date-fns';
 import { sortBy } from 'lodash';
 
 import { Event } from './event.entity';
@@ -16,7 +16,9 @@ export class EventsService {
     const response = await firstValueFrom(source);
 
     return response.data.data
-      .filter((item) => item.attributes.status === 'Predstoji/traje')
+      .filter((item) =>
+        isAfter(new Date(item.attributes.datetime), startOfDay(new Date())),
+      )
       .map((item) => ({
         id: `fh-${item.id}`,
         name: item.attributes.title,
