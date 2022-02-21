@@ -2,7 +2,7 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Person {
+type Organizer {
   name: String
 }
 
@@ -16,7 +16,8 @@ type Event {
   startDate: String
   endDate: String
   location: Location
-  organizer: Person
+  organizer: Organizer
+  url: String
 }
 
 type Query {

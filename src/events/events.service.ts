@@ -23,6 +23,7 @@ export class EventsService {
         endDate: null,
         location: { name: item.attributes.place },
         organizer: { name: 'Future Hub Križevci' },
+        url: `https://futurehub.krizevci.eu/program/${item.attributes.course_code}`,
       }));
   }
 
@@ -42,6 +43,7 @@ export class EventsService {
       endDate: event.end_dt,
       location: { name: event.location },
       organizer: { name: event.who },
+      url: null,
     }));
   }
 

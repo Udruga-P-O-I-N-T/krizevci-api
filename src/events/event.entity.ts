@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
-class Person {
+class Organizer {
   @Field({ nullable: true })
   name?: string;
 }
@@ -30,5 +30,8 @@ export class Event {
   location?: Location;
 
   @Field({ nullable: true })
-  organizer?: Person;
+  organizer?: Organizer;
+
+  @Field({ nullable: true })
+  url?: string;
 }
