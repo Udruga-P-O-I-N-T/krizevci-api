@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { formatISO, addMonths, isAfter, startOfDay } from 'date-fns';
 import { sortBy } from 'lodash';
+import * as cheerio from 'cheerio';
 
 import { Event } from './event.entity';
 
@@ -46,8 +47,52 @@ export class EventsService {
       endDate: event.end_dt,
       location: { name: event.location },
       organizer: { name: event.who },
-      url: null,
+      url: 'https://krizevci.hr/godisnji-kalendar-dogadanja/',
     }));
+  }
+
+  async findKinoEvents(): Promise<Event[]> {
+    const source = this.httpService.get('https://kino.krizevci.hr/');
+    const response = await firstValueFrom(source);
+    const $ = cheerio.load(response.data);
+    const movieLinks = new Set<string>();
+    $('a[href^=https://kino.krizevci.hr/film]').each(function () {
+      movieLinks.add($(this).attr('href'));
+    });
+    const events = await Promise.all(
+      [...movieLinks].map(async (link) => {
+        const source = this.httpService.get(link);
+        const response = await firstValueFrom(source);
+        const $ = cheerio.load(response.data);
+        const event: Event = {
+          id: link,
+          url: link,
+          name: $('meta[property="og:title"]').attr('content') ?? null,
+          image: $('meta[property="og:image"]').attr('content') ?? null,
+          description:
+            $('meta[property="og:description"]').attr('content') ?? null,
+          endDate: null,
+          organizer: { name: 'Kino Križevci' },
+        };
+        const dates = [];
+        $('.st-item').each(function () {
+          const [day, month, year] = $(this)
+            .find('.st-title')
+            .text()
+            .split('/');
+          const hour = $(this).find('li').text().replace('h', '');
+          const isoDate = `${year}-${month}-${day}T${hour}:00:00`;
+          dates.push(isoDate);
+        });
+        return (
+          dates
+            // Omit past events
+            .filter((date) => isAfter(new Date(date), startOfDay(new Date())))
+            .map((date) => ({ ...event, startDate: date }))
+        );
+      }),
+    );
+    return events.flat();
   }
 
   async findAllEvents(): Promise<Event[]> {
@@ -55,6 +100,7 @@ export class EventsService {
       [
         ...(await this.findFuturehubEvents()),
         ...(await this.findTuristickaZajednicaEvents()),
+        ...(await this.findKinoEvents()),
       ],
       'startDate',
     );

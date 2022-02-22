@@ -21,6 +21,12 @@ export class Event {
   name?: string;
 
   @Field({ nullable: true })
+  image?: string;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field({ nullable: true })
   startDate?: string;
 
   @Field({ nullable: true })
