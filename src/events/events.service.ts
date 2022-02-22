@@ -4,12 +4,20 @@ import { firstValueFrom } from 'rxjs';
 import { formatISO, addMonths, isAfter, startOfDay } from 'date-fns';
 import { sortBy } from 'lodash';
 import * as cheerio from 'cheerio';
+import * as NodeCache from 'node-cache';
 
 import { Event } from './event.entity';
+
+const cache = new NodeCache();
 
 @Injectable()
 export class EventsService {
   constructor(private httpService: HttpService) {}
+
+  onModuleInit() {
+    this.findAllEvents();
+    setInterval(() => this.findAllEvents(), 30 * 60 * 1000);
+  }
 
   async findFuturehubEvents(): Promise<Event[]> {
     const url = 'https://futurehub.krizevci.eu/api/events/';
@@ -96,7 +104,12 @@ export class EventsService {
   }
 
   async findAllEvents(): Promise<Event[]> {
-    return sortBy(
+    const cacheKey = 'events';
+    const cacheEvents: Event[] = cache.get(cacheKey);
+    if (cacheEvents) {
+      return cacheEvents;
+    }
+    const events = sortBy(
       [
         ...(await this.findFuturehubEvents()),
         ...(await this.findTuristickaZajednicaEvents()),
@@ -104,5 +117,7 @@ export class EventsService {
       ],
       'startDate',
     );
+    cache.set(cacheKey, events, 30 * 60);
+    return events;
   }
 }
