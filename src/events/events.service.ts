@@ -26,6 +26,7 @@ export class EventsService {
 
     return response.data.data
       .filter((item) =>
+        // TODO: Convert datetime to GMT, because this is incorrect around midnight
         isAfter(new Date(item.attributes.datetime), startOfDay(new Date())),
       )
       .map((item) => ({
@@ -103,6 +104,36 @@ export class EventsService {
     return events.flat();
   }
 
+  async findGrobljeEvents(): Promise<Event[]> {
+    const url = 'https://komunalno.hr/groblja/gradsko-groblje-krizevci/';
+    const source = this.httpService.get(url);
+    const response = await firstValueFrom(source);
+    const events: Event[] = [];
+    const $ = cheerio.load(response.data);
+    $('.termini_ukopa .card-body').each(function (index) {
+      const name = $(this).find('h3').text();
+      const description = $(this).find('p').text();
+      const [day, month, year] = description
+        .match(/\d\d.\d\d.\d\d\d\d/)[0]
+        .split('.');
+      const [hour, minutes] = description.match(/\d\d,\d\d/)[0].split(',');
+      const startDate = `${year}-${month}-${day}T${hour}:${minutes}:00`;
+      // Omit past events
+      if (!isAfter(new Date(startDate), startOfDay(new Date()))) {
+        return;
+      }
+      events.push({
+        id: `groblje-${index}`,
+        url,
+        name,
+        description,
+        startDate,
+        organizer: { name: 'Gradsko groblje Križevci' },
+      });
+    });
+    return events;
+  }
+
   async findAllEvents(): Promise<Event[]> {
     const cacheKey = 'events';
     const cacheEvents: Event[] = cache.get(cacheKey);
@@ -114,8 +145,9 @@ export class EventsService {
         ...(await this.findFuturehubEvents()),
         ...(await this.findTuristickaZajednicaEvents()),
         ...(await this.findKinoEvents()),
+        ...(await this.findGrobljeEvents()),
       ],
-      'startDate',
+      ['startDate', 'endDate'],
     );
     cache.set(cacheKey, events, 30 * 60);
     return events;
