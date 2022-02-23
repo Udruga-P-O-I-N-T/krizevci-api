@@ -140,15 +140,15 @@ export class EventsService {
     if (cacheEvents) {
       return cacheEvents;
     }
-    const events = sortBy(
-      [
-        ...(await this.findFuturehubEvents()),
-        ...(await this.findTuristickaZajednicaEvents()),
-        ...(await this.findKinoEvents()),
-        ...(await this.findGrobljeEvents()),
-      ],
-      ['startDate', 'endDate'],
-    );
+    let events = (
+      await Promise.all([
+        this.findFuturehubEvents(),
+        this.findTuristickaZajednicaEvents(),
+        this.findKinoEvents(),
+        this.findGrobljeEvents(),
+      ])
+    ).flat();
+    events = sortBy(events, ['startDate', 'endDate']);
     cache.set(cacheKey, events, 30 * 60);
     return events;
   }
